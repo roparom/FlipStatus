@@ -3,7 +3,6 @@
 
 static Window *window;
 
-//#define STRING_LENGTH 255
 #define DATE_STRING_LENGTH  30
 #define CAL_TEXT_STRING_LENGTH  25
 #define MUSIC_TEXT_STRING_LENGTH  30
@@ -21,10 +20,8 @@ typedef enum { STATUS_LAYER, CALENDAR_STATUS_LAYER, NUM_STATUS_LAYERS } StatusLa
 typedef enum { NEW_MOON, WAXING_CRESCENT, FIRST_QUARTER, WAXING_GIBBOUS, FULL_MOON, WANING_GIBBOUS, LAST_QUARTER, WANING_CRESCENT } MoonPhases;
 typedef enum { HUM_0, HUM_25, HUM_50, HUM_75, HUM_100 } HumidityLevels;
 
-// Modes for Views
 typedef enum { WEATHER_CURRENT, WEATHER_DAY1, WEATHER_DAY2, WEATHER_DAY3, NUM_WEATHER_MODES } WeatherDisplayModes;
 typedef enum { APPT_1, APPT_2, APPT_3, APPT_4, NUM_APPT_MODES } AppointmentModes;
-//typedef enum { APPT_1, APPT_2, APPT_3, NUM_APPT_MODES } AppointmentModes;
 typedef enum { MOON_CURRENT, MOON_NEXT_NEW, MOON_NEXT_FULL, NUM_MOON_MODES } MoonModes;
 
 static char *moon_phase_names[] = { "New Moon", "Waxing Cres", "First Qtr", "Waxing Gibb", "Full Moon", "Waning Gibb", "Last Qtr", "Waning Cres" };
@@ -35,11 +32,10 @@ static int active_status_layer = 0;
 static bool response_mode_active = false;
 
 static int prev_sms_count = -1;
-static int prev_call_count = -1;
+//static int prev_call_count = -1;
 static int prev_active_layer = -1;
 static int data_mode = STATUS_SCREEN_APP;
 static int response_mode_timeout = 90000; // 90 sec
-//static int wait_for_msg_app_mode = 0;
 
 static const int NEXT_ITEM = -1;
 static const int MIDDLE_LAYERS = 0;
@@ -48,13 +44,13 @@ static const int BOTTOM_LAYERS = 1;
 static PropertyAnimation *ani_out = NULL, *ani_in = NULL;
 static PropertyAnimation *ani_out_status = NULL, *ani_in_status = NULL;
 
-static char *layer_names[] = { "", "Weather Data", "", "", "Music" };
+static char *layer_names[] = { "", "Weather Data", "", "", "Music" }; //Meteorology?
 static char *status_layer_names[] = { "Phone Data", "" };
 static char *updating_str = "Updating...";
 
 static char *weather_mode_names[] = { "Current Weather", "Today's Weather", "Tomorrow", "Upcoming" };
-static char *appt_mode_names[] = { "First Appt", "Second Appt", "Third Appt", "Fourth Appt" };
-static char *moon_mode_names[] = { "Moon Data", "Next %s Moon" };
+static char *appt_mode_names[] = { "1st Event", "2nd Event", "3rd Event", "4th Event" }; // changed from { "First Appt", "Second Appt", "Third Appt", "Fourth Appt" };
+static char *moon_mode_names[] = { "Moon Data", "Next %s Moon" }; //
 
 static int active_weather_mode_index = 0;
 static int active_appt_mode_index = 0;
@@ -66,8 +62,8 @@ static int last_humidity_img_set = HUM_50;
 
 static AppTimer* dateRecoveryTimer = NULL;
 static AppTimer* responseModeTimer = NULL;
-static int date_switchback_short = 2000;
-static int date_switchback_long = 5000;
+static int date_switchback_short = 750; //from 2000
+static int date_switchback_long = 1250; //from 5000
 
 static TextLayer *text_weather_cond_layer, *text_weather_temp_layer;
 static TextLayer *text_weather_wind_layer, *text_weather_humidity_layer, *text_weather_humidity_label_layer, *text_weather_wind_label_layer, *text_weather_hi_lo_label_layer;
@@ -81,7 +77,9 @@ static TextLayer *calendar_date_layer2, *calendar_text_layer2;
 static TextLayer *music_artist_layer, *music_song_layer;
 
 static Layer *battery_layer, *pebble_battery_layer;
-static BitmapLayer *background_image, *weather_image, *moon_image, *status_image, *wind_image, *humidity_image;
+
+//static BitmapLayer *weather_image, *moon_image, *status_image, *wind_image, *humidity_image;
+static BitmapLayer *background_image, *weather_image, *moon_image, *status_image, *wind_image, *humidity_image; //INCLUDING BACKGROUND IMAGE
 
 static Layer *status_layer[NUM_STATUS_LAYERS], *animated_layer[NUM_LAYERS];
 
@@ -108,6 +106,7 @@ static char music_artist_str[MUSIC_TEXT_STRING_LENGTH], music_title_str[MUSIC_TE
 static char response_mode_top_str[MUSIC_TEXT_STRING_LENGTH], response_mode_bottom_str[MUSIC_TEXT_STRING_LENGTH];
 static int actual_num_appt_modes = NUM_APPT_MODES;
 
+//START THEME
 static bool color_mode_normal = true;
 
 GBitmap *bg_image;
@@ -127,8 +126,8 @@ static char *weather_conditions[] = { "Clear", "Rain", "Cloudy", "Partly Cloudy"
 const int WEATHER_IMG_IDS[] = {
 	RESOURCE_ID_IMAGE_SUN, 		// 0
 	RESOURCE_ID_IMAGE_RAIN,		// 1
-	RESOURCE_ID_IMAGE_CLOUD,		// 2
-	RESOURCE_ID_IMAGE_SUN_CLOUD,	// 3
+	RESOURCE_ID_IMAGE_CLOUD,	// 2
+	RESOURCE_ID_IMAGE_SUN_CLOUD,// 3
 	RESOURCE_ID_IMAGE_FOG,		// 4
 	RESOURCE_ID_IMAGE_WIND,		// 5
 	RESOURCE_ID_IMAGE_SNOW,		// 6
@@ -254,9 +253,6 @@ static time_t get_next_new_moon_date(){
 		daysLeft = 0;
 	}
 	
-	// testing
-	//time_t fakenow = (time(NULL) + (18 * 86400));
-	//time_t newMoon = fakenow + ((daysLeft+1) * 86400);
 	time_t newMoon = time(NULL) + ((daysLeft+1) * 86400);
 
 	return newMoon;
@@ -269,9 +265,6 @@ static time_t get_next_full_moon_date(){
 		daysLeft += 29.53059;
 	}
 	
-	// testing
-	//time_t fakenow = (time(NULL) + (18 * 86400));
-	//time_t newMoon = fakenow + ((daysLeft+1) * 86400);
 	time_t fullMoon = time(NULL) + ((daysLeft+1) * 86400);
 
 	return fullMoon;
@@ -331,7 +324,6 @@ void sendCommandInt(int key, int param) {
 
 	dict_write_int8(iterout, key, param);
 	app_message_outbox_send();
-	//APP_LOG(APP_LOG_LEVEL_DEBUG, "app_message_outbox_send");
 }
 
 static void set_status_app_as_active(void *data) {
@@ -339,26 +331,21 @@ static void set_status_app_as_active(void *data) {
 }
 
 void data_update_and_refresh() {
-	// This is a hack.  When you query the weather for humidity and wind, those tuple
-	// vals will in turn send out a normal SS messgae for update.  You can't send two at the same time,
-	// so this is hopefully a temporary hack.
+
 	data_mode = WEATHER_APP;
 	sendCommandInt(SM_SCREEN_ENTER_KEY, WEATHER_APP);
 	app_timer_register(20000, set_status_app_as_active, NULL);
-	//sendCommandInt(SM_SCREEN_ENTER_KEY, MESSAGES_APP);
-	//APP_LOG(APP_LOG_LEVEL_DEBUG, "MESSAGES_APP SENT...");
 }
 
 
 void handle_minute_tick(struct tm *tick_time, TimeUnits units_changed) {
-	// Need to be static because they're used by the system later.
+
 	static char time_text[] = "00:00";
-	static char date_text[] = "Xxxxxxxxx 00";
+	static char date_text[] = "Xxxxx00xxxxxx";
 
 	char *time_format;
 
-	// TODO: Only update the date when it's changed.
-	strftime(date_text, sizeof(date_text), "%a, %b %e", tick_time);
+	strftime(date_text, sizeof(date_text), "%a, %e %b.", tick_time); //UK Date - "%a, %e %b."
 	
 	if (!response_mode_active)
 		text_layer_set_text(text_date_layer, date_text);
@@ -373,8 +360,7 @@ void handle_minute_tick(struct tm *tick_time, TimeUnits units_changed) {
 
 	strftime(time_text, sizeof(time_text), time_format, tick_time);
 
-	// Kludge to handle lack of non-padded hour format string
-	// for twelve hour clock.
+
 	if (!clock_is_24h_style() && (time_text[0] == '0')) {
 		memmove(time_text, &time_text[1], sizeof(time_text)-1);
 	}
@@ -383,7 +369,6 @@ void handle_minute_tick(struct tm *tick_time, TimeUnits units_changed) {
 
 	strcpy(old_date_str, date_text);
 	
-	// Internal update request stuff
 	++current_update_min_hits;
 
 	if (first_timer_tick == false || current_update_min_hits >= INTERNAL_UPDATE_TIME) {
@@ -391,20 +376,6 @@ void handle_minute_tick(struct tm *tick_time, TimeUnits units_changed) {
 		set_moon_data();
 		data_update_and_refresh();
 	}
-
-	//if (tick_time->tm_hour == hour_white && tick_time->tm_min == minute_white && color_mode_normal == 1) {
-	//	deinit();
-	//	color_mode_normal = 0;
-	//	init();
-	//	text_layer_set_text(text_weather_cond_layer, "Updating..." ); 		
-	//	sendCommandInt(SM_SCREEN_ENTER_KEY, STATUS_SCREEN_APP);
-	//} else if (tick_time->tm_hour == hour_black && tick_time->tm_min == minute_black && color_mode_normal == 0) {
-	//	deinit();
-	//	color_mode_normal = 1;
-	//	init();
-	//	text_layer_set_text(text_weather_cond_layer, "Updating..." ); 		
-	//	sendCommandInt(SM_SCREEN_ENTER_KEY, STATUS_SCREEN_APP);
-	//}
 
 	first_timer_tick = true;
 }
@@ -521,7 +492,7 @@ void set_moon_data() {
 
 void format_and_set_moon_date(time_t tt) {
 	struct tm * nm = localtime(&tt);
-	strftime(moon_bottom_text_str[MOON_NEXT_NEW], sizeof(moon_bottom_text_str[MOON_NEXT_NEW]), "%a, %b %e", nm);
+	strftime(moon_bottom_text_str[MOON_NEXT_NEW], sizeof(moon_bottom_text_str[MOON_NEXT_NEW]), "%a, %e %b.", nm); //UK Date
 	text_layer_set_text(moon_phase_layer, moon_bottom_text_str[MOON_NEXT_NEW]);
 	text_layer_set_text(moon_text_layer, moon_top_text_str[MOON_NEXT_NEW]);
 	setMoonImage(moon_icons[MOON_NEXT_NEW]);
@@ -536,9 +507,6 @@ void set_new_moon_data() {
 	format_and_set_moon_date(tt);
 
 	
-	//time_t tt = get_next_new_moon_date();
-	//struct tm * tmNewMoon = localtime(&tt);
-	//APP_LOG("new moon %d",tmNewMoon->tm_year);
 }
 
 void set_full_moon_data() {
@@ -548,11 +516,7 @@ void set_full_moon_data() {
 	
 	time_t tt = get_next_full_moon_date();
 	format_and_set_moon_date(tt);
-	
-	
-	//time_t tt = get_next_new_moon_date();
-	//struct tm * tmNewMoon = localtime(&tt);
-	//APP_LOG("new moon %d",tmNewMoon->tm_year);
+
 }
 
 
@@ -603,15 +567,6 @@ void setWindImage() {
 	bitmap_layer_set_bitmap(wind_image, current_wind_image);
 }
 
-static void activate_response_mode() {
-	prev_active_layer = active_layer;
-	response_mode_active = true;
-	data_mode = MESSAGES_APP;
-	sendCommandInt(SM_SCREEN_ENTER_KEY, MESSAGES_APP);
-}
-
-
-
 //======================================================================================================
 // RECEIVE FUNCTIONS
 //======================================================================================================
@@ -619,54 +574,41 @@ static void rcv(DictionaryIterator *received, void *context) {
 	// Got a message callback
 
 	Tuple *t;
-	int *val;
-	//APP_LOG(APP_LOG_LEVEL_DEBUG, "RCV");
 
 	t = dict_find(received, SM_WEATHER_DAY1_KEY);
 	if (t != NULL) {
-		//APP_LOG(APP_LOG_LEVEL_DEBUG, "SM_WEATHER_DAY1_KEY VALID");
 		memcpy(weather_temp_or_day_str[WEATHER_DAY1], t->value->cstring, strlen(t->value->cstring));
 		weather_temp_or_day_str[WEATHER_DAY1][strlen(t->value->cstring)] = '\0';
 
-		// copy the hi lo
 		p_weather_hi_lo_str[WEATHER_DAY1] = (char*)&weather_temp_or_day_str[WEATHER_DAY1][6];
 		p_weather_hi_lo_str[WEATHER_CURRENT] = p_weather_hi_lo_str[WEATHER_DAY1];
 
-		// copy the day
-		//weather_temp_or_day_str[WEATHER_DAY1][4] = '\0';
 		memcpy(weather_temp_or_day_str[WEATHER_DAY1], "Today", 5);
 		weather_temp_or_day_str[WEATHER_DAY1][5] = '\0';
 	}
 
 	t = dict_find(received, SM_WEATHER_DAY2_KEY);
 	if (t != NULL) {
-		//APP_LOG(APP_LOG_LEVEL_DEBUG, "SM_WEATHER_DAY2_KEY VALID");
 		memcpy(weather_temp_or_day_str[WEATHER_DAY2], t->value->cstring, strlen(t->value->cstring));
 		weather_temp_or_day_str[WEATHER_DAY2][strlen(t->value->cstring)] = '\0';
 
-		// copy the hi lo
 		p_weather_hi_lo_str[WEATHER_DAY2] = (char*)&weather_temp_or_day_str[WEATHER_DAY2][6];
 
-		// copy the day
 		weather_temp_or_day_str[WEATHER_DAY2][4] = '\0';
 	}
 
 	t = dict_find(received, SM_WEATHER_DAY3_KEY);
 	if (t != NULL) {
-		//APP_LOG(APP_LOG_LEVEL_DEBUG, "SM_WEATHER_DAY3_KEY VALID");
 		memcpy(weather_temp_or_day_str[WEATHER_DAY3], t->value->cstring, strlen(t->value->cstring));
 		weather_temp_or_day_str[WEATHER_DAY3][strlen(t->value->cstring)] = '\0';
 
-		// copy the hi lo
 		p_weather_hi_lo_str[WEATHER_DAY3] = (char*)&weather_temp_or_day_str[WEATHER_DAY3][6];
 
-		// copy the day
 		weather_temp_or_day_str[WEATHER_DAY3][4] = '\0';
 	}
 
 	t = dict_find(received, SM_WEATHER_ICON_KEY);
 	if (t != NULL) {
-		//APP_LOG(APP_LOG_LEVEL_DEBUG, "SM_WEATHER_ICON_KEY VALID");
 		int wImg = t->value->uint8;
 		Tuple *w = dict_find(received, SM_WEATHER_COND_KEY);
 		if (w != NULL) {
@@ -698,7 +640,6 @@ static void rcv(DictionaryIterator *received, void *context) {
 
 	t = dict_find(received, SM_WEATHER_COND_KEY);
 	if (t != NULL) {
-		//APP_LOG(APP_LOG_LEVEL_DEBUG, "SM_WEATHER_COND_KEY VALID");
 		int len = strlen(t->value->cstring);
 		if (len > WEATHER_COND_STRING_LENGTH-2) {
 			len = WEATHER_COND_STRING_LENGTH-2;
@@ -717,7 +658,6 @@ static void rcv(DictionaryIterator *received, void *context) {
 
 	t = dict_find(received, SM_WEATHER_TEMP_KEY);
 	if (t != NULL) {
-		//APP_LOG(APP_LOG_LEVEL_DEBUG, "SM_WEATHER_TEMP_KEY VALID");
 		memcpy(weather_temp_or_day_str[WEATHER_CURRENT], t->value->cstring, strlen(t->value->cstring));
 		weather_temp_or_day_str[WEATHER_CURRENT][strlen(t->value->cstring)] = '\0';
 		text_layer_set_text(text_weather_temp_layer, weather_temp_or_day_str[WEATHER_CURRENT]);
@@ -738,7 +678,7 @@ static void rcv(DictionaryIterator *received, void *context) {
 		for (unsigned int i = 0; i < strlen(weather_humidity_str); i++) {
 			if (!colonFound && weather_humidity_str[i] == ':') {
 				colonFound = true;
-				i += 2; // get rid of the space after the colon
+				i += 2;
 			}
 
 			if (colonFound) {
@@ -762,7 +702,6 @@ static void rcv(DictionaryIterator *received, void *context) {
 
 	t = dict_find(received, SM_WEATHER_WIND_KEY);
 	if (t != NULL) {
-		//APP_LOG(APP_LOG_LEVEL_DEBUG, "SM_WEATHER_WIND_KEY VALID");
 		int len = strlen(t->value->cstring);
 		if (len > WIND_STRING_LENGTH-2) {
 			len = WIND_STRING_LENGTH-2;
@@ -776,7 +715,7 @@ static void rcv(DictionaryIterator *received, void *context) {
 		for (unsigned int i = 0; i < strlen(weather_wind_str); i++) {
 			if (!colonFound && weather_wind_str[i] == ':') {
 				colonFound = true;
-				i += 2; // get rid of the space after the colon
+				i += 2;
 			}
 
 			if (colonFound) {
@@ -787,41 +726,21 @@ static void rcv(DictionaryIterator *received, void *context) {
 		weather_wind_str[newStrIdx] = '\0';
 		text_layer_set_text(text_weather_wind_layer, weather_wind_str);
 		
-		// Switch to calendar mode... sometimes, this may not respond, 
-		// so always make sure we get back into status mode
 		data_mode = CALENDAR_APP;
 		sendCommandInt(SM_SCREEN_ENTER_KEY, CALENDAR_APP);
 	}
 	
 	
-	//t = dict_find(received, SM_MESSAGES_UPDATE_KEY);
-	//if (t != NULL) {
-	//	APP_LOG(APP_LOG_LEVEL_DEBUG, "SM_MESSAGES_UPDATE_KEY VALID");
-	//}
-	
 	t = dict_find(received, SM_CALL_SMS_UPDATE_KEY);
 	if (t != NULL) {
 		APP_LOG(APP_LOG_LEVEL_DEBUG, "SM_CALL_SMS_UPDATE_KEY VALID");
 	}
-	
-	//t = dict_find(received, SM_CALL_SMS_KEY);
-	//if (t != NULL) {
-	//	APP_LOG(APP_LOG_LEVEL_DEBUG, "SM_CALL_SMS_KEY VALID");
-//	}
-	
-	
+
 
 	t = dict_find(received, SM_CALENDAR_UPDATE_KEY);
 	if (t != NULL) {
-		//APP_LOG(APP_LOG_LEVEL_DEBUG, "CAL_KEY VALID");
-		// Maybe we need this?
-		//if (wait_for_msg_app_mode > 0) {
-		//	sendCommandInt(SM_CALL_SMS_CMD_KEY, wait_for_msg_app_mode);
-		//	wait_for_msg_app_mode = 0;
-		//	return;
-		//}
 		
-		uint8_t number_entries = t->value->data[0];
+//		uint8_t number_entries = t->value->data[0];
 		uint8_t position = 0;
 		uint8_t title_subtitle = 0;
 		uint8_t len = 0;
@@ -873,15 +792,9 @@ static void rcv(DictionaryIterator *received, void *context) {
 						time_t tt = time(NULL);
 						struct tm * tm_now = localtime(&tt);
 						
-						// US Dates MM/DD
+						// UK Dates MM/DD
 						char curDates[1][7];
-						snprintf(curDates[0], 6, "%02d/%02d", tm_now->tm_mon+1, tm_now->tm_mday);
-						
-						// DD/MM format
-						//snprintf(curDates[0], 6, "%02d/%02d", tm_now->tm_mday, tm_now->tm_mon+1);
-																		
-						// DD.MM. format
-						//snprintf(curDates[0], 7, "%02d.%02d.", tm_now->tm_mday, tm_now->tm_mon+1);
+						snprintf(curDates[0], 6, "%02d/%02d", tm_now->tm_mday, tm_now->tm_mon+1);
 						
 						int strLenDt = 5;
 						int idx = 0;
@@ -905,14 +818,7 @@ static void rcv(DictionaryIterator *received, void *context) {
 		
 		// Copy default vals in if there are not enough appts to fill
 		if (data_mode != MESSAGES_APP) {
-			/*
-			for (int k=(position+1); k < NUM_APPT_MODES; k++) {
-				memcpy(calendar_date_str[k], default_cal_names[0], strlen(default_cal_names[0]));
-				calendar_date_str[k][strlen(default_cal_names[0])] = '\0';
-				memcpy(calendar_text_str[k], default_cal_names[1], strlen(default_cal_names[1]));
-				calendar_text_str[k][strlen(default_cal_names[1])] = '\0';
-			}
-			*/
+			
 			actual_num_appt_modes = position < NUM_APPT_MODES ? position : NUM_APPT_MODES;
 			int oldAppt = active_appt_mode_index;
 			int oldStatusAppt = active_appt_status_mode_index;
@@ -921,8 +827,6 @@ static void rcv(DictionaryIterator *received, void *context) {
 			handle_calendar_mode_click(oldAppt);
 			handle_calendar_status_mode_click(oldStatusAppt);
 		
-			// Reset into smartwatch mode to make sure we get auto updates
-			//app_timer_cancel(statusModeTimer);
 			data_mode = STATUS_SCREEN_APP;
 			sendCommandInt(SM_SCREEN_ENTER_KEY, STATUS_SCREEN_APP);
 		} else {
@@ -935,7 +839,6 @@ static void rcv(DictionaryIterator *received, void *context) {
 
 	t = dict_find(received, SM_COUNT_MAIL_KEY);
 	if (t != NULL) {
-		//APP_LOG(APP_LOG_LEVEL_DEBUG, "SM_COUNT_MAIL_KEY VALID");
 		int len = strlen(t->value->cstring);
 		if (len > BADGE_COUNT_STRING_LENGTH-2) {
 			len = BADGE_COUNT_STRING_LENGTH-2;
@@ -948,7 +851,6 @@ static void rcv(DictionaryIterator *received, void *context) {
 
 	t = dict_find(received, SM_COUNT_SMS_KEY);
 	if (t != NULL) {
-		//APP_LOG(APP_LOG_LEVEL_DEBUG, "SM_COUNT_SMS_KEY VALID");
 		int len = strlen(t->value->cstring);
 		if (len > BADGE_COUNT_STRING_LENGTH-2) {
 			len = BADGE_COUNT_STRING_LENGTH-2;
@@ -967,7 +869,6 @@ static void rcv(DictionaryIterator *received, void *context) {
 
 	t = dict_find(received, SM_COUNT_PHONE_KEY);
 	if (t != NULL) {
-		//APP_LOG(APP_LOG_LEVEL_DEBUG, "SM_COUNT_PHONE_KEY VALID");
 		int len = strlen(t->value->cstring);
 		if (len > BADGE_COUNT_STRING_LENGTH-2) {
 			len = BADGE_COUNT_STRING_LENGTH-2;
@@ -975,20 +876,11 @@ static void rcv(DictionaryIterator *received, void *context) {
 		memcpy(phone_count_str, t->value->cstring, len);
 		phone_count_str[len] = '\0';
 		text_layer_set_text(text_phone_layer, phone_count_str);
-		
-		// Not sure how to get and display last caller yet
-		/*
-		int cnt = atoi(phone_count_str);
-		if (cnt > prev_phone_count && prev_phone_count != -1) {
-			activate_response_mode();
-		}
-		prev_phone_count = cnt;
-		*/
+
 	}
 
 	t = dict_find(received, SM_COUNT_BATTERY_KEY);
 	if (t != NULL) {
-		//APP_LOG(APP_LOG_LEVEL_DEBUG, "SM_COUNT_BATTERY_KEY VALID");
 		batteryPercent = t->value->uint8;
 		layer_mark_dirty(battery_layer);
 
@@ -998,7 +890,6 @@ static void rcv(DictionaryIterator *received, void *context) {
 
 	t = dict_find(received, SM_STATUS_MUS_ARTIST_KEY);
 	if (t != NULL) {
-		//APP_LOG(APP_LOG_LEVEL_DEBUG, "SM_STATUS_MUS_ARTIST_KEY VALID");
 		int len = strlen(t->value->cstring);
 		if (len > MUSIC_TEXT_STRING_LENGTH-2) {
 			len = MUSIC_TEXT_STRING_LENGTH-2;
@@ -1013,7 +904,7 @@ static void rcv(DictionaryIterator *received, void *context) {
 
 	t = dict_find(received, SM_STATUS_MUS_TITLE_KEY);
 	if (t != NULL) {
-		//APP_LOG(APP_LOG_LEVEL_DEBUG, "SM_STATUS_MUS_TITLE_KEY VALID");
+
 		int len = strlen(t->value->cstring);
 		if (len > MUSIC_TEXT_STRING_LENGTH-2) {
 			len = MUSIC_TEXT_STRING_LENGTH-2;
@@ -1026,11 +917,10 @@ static void rcv(DictionaryIterator *received, void *context) {
 	}
 }
 
-
-//======================================================================================================
 // END RECEIVE FUNCTIONS
-//======================================================================================================
 
+
+//THEME
 static void toggle_themes()
 {
 	GColor textColor;
@@ -1046,13 +936,19 @@ static void toggle_themes()
 	persist_write_bool(FS_CONFIG_KEY_THEME, color_mode_normal);
 
 	gbitmap_destroy(bg_image);
-
-	if (color_mode_normal == 1)
-		bg_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BACKGROUND);
-	else
+	
+	//BACKGROUND THEME
+	
+	if (color_mode_normal == 1) {
+		bg_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BACKGROUND); 
+	} 
+	else {
 		bg_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BACKGROUND_INV);
-
+	}
+	
+	
 	bitmap_layer_set_bitmap(background_image, bg_image);
+	
 
 	setStatusImage();
 
@@ -1071,10 +967,13 @@ static void toggle_themes()
 	text_layer_set_text_color(calendar_text_layer2, textColor);
 	text_layer_set_text_color(music_artist_layer, textColor);
 	text_layer_set_text_color(music_song_layer, textColor);
+	
+	//Status Text
 	text_layer_set_text_color(text_mail_layer, textColor);
 	text_layer_set_text_color(text_sms_layer, textColor);
 	text_layer_set_text_color(text_phone_layer, textColor);
 	text_layer_set_text_color(text_battery_layer, textColor);
+
 	text_layer_set_text_color(text_weather_humidity_layer, textColor);
 	text_layer_set_text_color(text_weather_humidity_label_layer, textColor);
 	text_layer_set_text_color(text_weather_wind_layer, textColor);
@@ -1084,9 +983,11 @@ static void toggle_themes()
 	setHumidityImage(last_humidity_img_set);
 	setWindImage();
 	set_moon_data();
-
+	
 	Layer *window_layer = window_get_root_layer(window);
 	layer_mark_dirty(window_layer);
+
+
 }
 
 
@@ -1158,7 +1059,7 @@ static void handle_weather_mode_click(int mode){
 	}
 
 	if (active_weather_mode_index == WEATHER_CURRENT) {
-		text_layer_set_font(text_weather_temp_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28));
+		text_layer_set_font(text_weather_temp_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28)); 
 	}
 	else {
 		text_layer_set_font(text_weather_temp_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
@@ -1200,7 +1101,6 @@ static void handle_calendar_mode_click(int mode) {
 	
 	text_layer_set_text(calendar_text_layer1, calendar_text_str[active_appt_mode_index]);
 	text_layer_set_text(calendar_date_layer1, calendar_date_str[active_appt_mode_index]);
-	//layer_mark_dirty(animated_layer[CALENDAR_LAYER]);
 }
 
 static void handle_calendar_status_mode_click(int mode) {
@@ -1246,7 +1146,6 @@ static void set_info_text(int mode) {
 		}
 	}
 	
-	//set_timer_for_date_recovery(date_switchback_long);
 }
 
 void dismiss_response_mode() {
@@ -1254,7 +1153,6 @@ void dismiss_response_mode() {
 	response_mode_active = false;
 	transition_main_layer(prev_active_layer);
 	get_date_back(NULL);
-	// Restore the real music layer
 	text_layer_set_text(music_artist_layer, music_artist_str);
 	text_layer_set_text(music_song_layer, music_title_str);
 	
@@ -1279,23 +1177,20 @@ void reset_views_and_modes()
 
 // ===== UP ======
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
-	if (response_mode_active) {
-		// Sends canned txt 1
-		//wait_for_msg_app_mode = 1;
-		//sendCommandInt(SM_SCREEN_ENTER_KEY, MESSAGES_APP);
+	 if (response_mode_active) {
 		sendCommandInt(SM_CALL_SMS_CMD_KEY, 1);
 		dismiss_response_mode();
 		set_info_text_with_timer("Sent SMS 1", date_switchback_long);
-	} else if (active_layer == MUSIC_LAYER) {
+	}  else if (active_layer == MUSIC_LAYER) {
 		set_info_text_with_timer("Volume up", date_switchback_short);
 		sendCommand(SM_VOLUME_UP_KEY);
-	} else if (active_layer == MOON_LAYER) {
+	}  else if (active_layer == MOON_LAYER) {
 		handle_moon_mode_click(NEXT_ITEM);
 		set_info_text(MIDDLE_LAYERS);
-	} else if (active_layer == WEATHER_LAYER) {
+	}  else if (active_layer == WEATHER_LAYER) {
 		handle_weather_mode_click(NEXT_ITEM);
 		set_info_text(MIDDLE_LAYERS);
-	} else if (active_layer == CALENDAR_LAYER) {
+	}  else if (active_layer == CALENDAR_LAYER) {
 		handle_calendar_mode_click(NEXT_ITEM);
 		set_info_text(MIDDLE_LAYERS);
 	}
@@ -1346,9 +1241,7 @@ static void select_long_click_handler(ClickRecognizerRef recognizer, void *conte
 		sendCommand(SM_PLAYPAUSE_KEY);
 	} else {
 		set_info_text_with_timer("Invoke Siri", date_switchback_short);
-		//text_layer_set_text(text_date_layer, "Invoke Siri");
 		sendCommand(SM_OPEN_SIRI_KEY);
-		//set_timer_for_date_recovery(date_switchback_short);
 	}
 }
 
@@ -1372,9 +1265,6 @@ static void select_double_click_handler(ClickRecognizerRef recognizer, void *con
 
 static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
 	if (response_mode_active) {
-		// Sends canned txt 2
-		//wait_for_msg_app_mode = 2;
-		//sendCommandInt(SM_SCREEN_ENTER_KEY, MESSAGES_APP);
 		sendCommandInt(SM_CALL_SMS_CMD_KEY, 2);
 		dismiss_response_mode();
 		set_info_text_with_timer("Sent SMS 2", date_switchback_long);
@@ -1389,6 +1279,7 @@ static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
 
 static void down_long_click_handler(ClickRecognizerRef recognizer, void *context) {
 	if (response_mode_active) return;
+	
 	
 	if (response_mode_active) {
 		// Sends canned txt 2
@@ -1406,8 +1297,12 @@ static void down_long_click_handler(ClickRecognizerRef recognizer, void *context
 static void down_double_click_handler(ClickRecognizerRef recognizer, void *context) {
 	if (response_mode_active) return;
 	
-	transition_main_layer(MUSIC_LAYER);
-	set_info_text(MIDDLE_LAYERS);
+	if (active_layer != MUSIC_LAYER) {
+		transition_main_layer(MUSIC_LAYER);
+		set_info_text(MIDDLE_LAYERS);
+	} else {
+		//do nothing on Music Layer
+	}
 }
 
 
@@ -1427,26 +1322,24 @@ static void click_config_provider(void *context) {
 
 //======================================================================================================
 // END BUTTON HANDLERS
-//======================================================================================================
 
-
-//======================================================================================================
 // CALLBACKS
 //======================================================================================================
 void reset() {
 	text_layer_set_text(text_weather_cond_layer, updating_str);
 }
 
+//ICON THEME
 void setCalendarIcons(GContext* ctx, const char *iconNum, GPoint pt, GRect txtRect) {
 	GColor fore;
 	GColor fill;
 	if (color_mode_normal == 1){
-		fore = GColorBlack;
-		fill = GColorWhite;
+		fore = PBL_IF_COLOR_ELSE(GColorBlack, GColorBlack);
+		fill = PBL_IF_COLOR_ELSE(GColorVividCerulean, GColorWhite);
 	}
 	else {
-		fore = GColorWhite;
-		fill = GColorBlack;
+		fore = PBL_IF_COLOR_ELSE(GColorWhite, GColorWhite);
+		fill = PBL_IF_COLOR_ELSE(GColorDukeBlue, GColorBlack);
 	}
 
 	if (iconNum[0] >= '4') {
@@ -1477,13 +1370,56 @@ void battery_layer_update_callback(Layer *me, GContext* ctx) {
 	GColor stroke;
 	GColor fill;
 	if (color_mode_normal == 1){
-		stroke = GColorBlack;
-		fill = GColorWhite;
+		
+		//PHONE BATTERY STATE COLOURS
+		if(batteryPercent <= 30) { 
+		stroke = PBL_IF_COLOR_ELSE(GColorDarkCandyAppleRed, GColorBlack); 	
+		fill = PBL_IF_COLOR_ELSE(GColorRed, GColorWhite);
+	}	
+		else if(batteryPercent <= 40) {
+		stroke = PBL_IF_COLOR_ELSE(GColorOrange, GColorBlack); 	
+		fill = PBL_IF_COLOR_ELSE(GColorChromeYellow, GColorWhite);
 	}
-	else {
-		stroke = GColorWhite;
-		fill = GColorBlack;
+		else if(batteryPercent <= 60) {
+		stroke = PBL_IF_COLOR_ELSE(GColorGreen, GColorBlack); 	
+		fill = PBL_IF_COLOR_ELSE(GColorBrightGreen, GColorWhite);
 	}
+		else if(batteryPercent == 100) {
+		stroke = PBL_IF_COLOR_ELSE(GColorBlue, GColorBlack); 	
+		fill = PBL_IF_COLOR_ELSE(GColorCobaltBlue, GColorWhite); 
+	}
+		else {
+		stroke = PBL_IF_COLOR_ELSE(GColorDarkGreen, GColorBlack); 	
+		fill = PBL_IF_COLOR_ELSE(GColorGreen, GColorWhite); 		
+	}
+		
+								}
+	else {	
+		
+		//PHONE BATTERY STATE COLOURS
+		if(batteryPercent <= 30) { 
+		stroke = PBL_IF_COLOR_ELSE(GColorDarkCandyAppleRed, GColorWhite); 	
+		fill = PBL_IF_COLOR_ELSE(GColorRed, GColorBlack);
+	}	
+		else if(batteryPercent <= 40) {
+		stroke = PBL_IF_COLOR_ELSE(GColorOrange, GColorWhite); 	
+		fill = PBL_IF_COLOR_ELSE(GColorChromeYellow, GColorBlack);
+	}
+		else if(batteryPercent <= 60) {
+		stroke = PBL_IF_COLOR_ELSE(GColorGreen, GColorWhite); 	
+		fill = PBL_IF_COLOR_ELSE(GColorBrightGreen, GColorBlack);
+	}
+		else if(batteryPercent == 100) {
+		stroke = PBL_IF_COLOR_ELSE(GColorBlue, GColorWhite); 	
+		fill = PBL_IF_COLOR_ELSE(GColorCobaltBlue, GColorBlack); 
+	}
+		else {
+		stroke = PBL_IF_COLOR_ELSE(GColorDarkGreen, GColorWhite); 	
+		fill = PBL_IF_COLOR_ELSE(GColorGreen, GColorBlack); 		
+	}
+		
+		
+		 }
 
 	graphics_context_set_stroke_color(ctx, stroke);
 	graphics_context_set_fill_color(ctx, fill);
@@ -1495,18 +1431,63 @@ void pebble_battery_layer_update_callback(Layer *me, GContext* ctx) {
 	GColor stroke;
 	GColor fill;
 	if (color_mode_normal == 1){
-		stroke = GColorBlack;
-		fill = GColorWhite;
+		
+		//PEBBLE BATTERY STATE COLOURS
+		if(batteryPblPercent <= 20) { 
+		stroke = PBL_IF_COLOR_ELSE(GColorDarkCandyAppleRed, GColorBlack); 	
+		fill = PBL_IF_COLOR_ELSE(GColorRed, GColorWhite);
+	}	
+		else if(batteryPblPercent <= 30) {
+		stroke = PBL_IF_COLOR_ELSE(GColorOrange, GColorBlack); 	
+		fill = PBL_IF_COLOR_ELSE(GColorChromeYellow, GColorWhite);
 	}
+		else if(batteryPblPercent <= 40) {
+		stroke = PBL_IF_COLOR_ELSE(GColorGreen, GColorBlack); 	
+		fill = PBL_IF_COLOR_ELSE(GColorBrightGreen, GColorWhite);
+	}	
+		else if(batteryPblPercent == 100) {
+		stroke = PBL_IF_COLOR_ELSE(GColorBlue, GColorBlack); 	
+		fill = PBL_IF_COLOR_ELSE(GColorCobaltBlue, GColorWhite); 
+	}
+		else {
+		stroke = PBL_IF_COLOR_ELSE(GColorDarkGreen, GColorBlack); 	
+		fill = PBL_IF_COLOR_ELSE(GColorGreen, GColorWhite); 		
+	}
+
+								}
 	else {
-		stroke = GColorWhite;
-		fill = GColorBlack;
+		
+		//PEBBLE BATTERY STATE COLOURS
+		if(batteryPblPercent <= 20) { 
+		stroke = PBL_IF_COLOR_ELSE(GColorDarkCandyAppleRed, GColorWhite); 	
+		fill = PBL_IF_COLOR_ELSE(GColorRed, GColorBlack);
+	}	
+		else if(batteryPblPercent <= 30) {
+		stroke = PBL_IF_COLOR_ELSE(GColorOrange, GColorWhite); 	
+		fill = PBL_IF_COLOR_ELSE(GColorChromeYellow, GColorBlack);
 	}
+		else if(batteryPblPercent <= 40) {
+		stroke = PBL_IF_COLOR_ELSE(GColorGreen, GColorWhite); 	
+		fill = PBL_IF_COLOR_ELSE(GColorBrightGreen, GColorBlack);
+	}	
+		else if(batteryPblPercent == 100) {
+		stroke = PBL_IF_COLOR_ELSE(GColorBlue, GColorWhite); 	
+		fill = PBL_IF_COLOR_ELSE(GColorCobaltBlue, GColorBlack); 
+	}
+		else {
+		stroke = PBL_IF_COLOR_ELSE(GColorDarkGreen, GColorWhite); 	
+		fill = PBL_IF_COLOR_ELSE(GColorGreen, GColorBlack); 		
+	}
+		
+		
+		 }
 
 	graphics_context_set_stroke_color(ctx, stroke);
 	graphics_context_set_fill_color(ctx, fill);
 
-	graphics_fill_rect(ctx, GRect(15 - (int)((batteryPblPercent / 100.0)*15.0), 0, 15, 7), 0, GCornerNone);
+	graphics_fill_rect(ctx, GRect(15 - (int)((batteryPblPercent / 100.0)*15.0), 0, 15, 7), 0, GCornerNone); //TBC
+
+	
 }
 
 
@@ -1517,23 +1498,20 @@ static void window_load(Window *window) {
 }
 
 static void window_unload(Window *window) {
-
+	
 }
 
 static void window_appear(Window *window) {
-	//sendCommandInt(SM_SCREEN_ENTER_KEY, STATUS_SCREEN_APP);
 	data_update_and_refresh();
 }
 
 
 static void window_disappear(Window *window) {
-	//sendCommandInt(SM_SCREEN_EXIT_KEY, STATUS_SCREEN_APP);
 	data_update_and_refresh();
 }
 
 void reconnect(void *data) {
 	reset();
-	//sendCommandInt(SM_SCREEN_ENTER_KEY, STATUS_SCREEN_APP);
 	data_update_and_refresh();
 }
 
@@ -1555,9 +1533,7 @@ void batteryChanged(BatteryChargeState batt) {
 
 //======================================================================================================
 // END CALLBACKS
-//======================================================================================================
 
-//======================================================================================================
 // INIT / DEINIT
 //======================================================================================================
 static void text_layer_setup(Layer * parentLayer, TextLayer * layer, GTextAlignment tAlign, GColor textColor, const char * fontkey, const char * txt) {
@@ -1576,8 +1552,14 @@ static void add_and_set_bitmap_layer(Layer * parentLayer, BitmapLayer * layer, G
 
 static void init(void) {
 	window = window_create();
-	window_set_fullscreen(window, true);
-
+	
+	#if PBL_BW
+	window_set_fullscreen(window, true); //by default on basalt
+	#else
+	
+	#endif
+	
+	
 	window_set_click_config_provider(window, click_config_provider);
 	window_set_window_handlers(window, (WindowHandlers) {
 		.load = window_load,
@@ -1593,21 +1575,23 @@ static void init(void) {
 
 	GColor textColor;
 
-	if (color_mode_normal == false) {
-		//APP_LOG(APP_LOG_LEVEL_DEBUG, "Theme is white");
-		textColor = GColorBlack;
+	if (color_mode_normal == true) {
+		textColor = GColorWhite; //DEFAULT THEME TEXT COLOUR
 	}
 	else {
-		//APP_LOG(APP_LOG_LEVEL_DEBUG, "Theme is black");
-		textColor = GColorWhite;
+		textColor = GColorBlack;
 	}
 
-	if (color_mode_normal == true)
+	
+	//BACKGROUND IMAGE
+	
+	if (color_mode_normal == true){
 		bg_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BACKGROUND);
-	else
+	}
+	else {
 		bg_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BACKGROUND_INV);
-
-
+	}
+	
 	Layer *window_layer = window_get_root_layer(window);
 
 	//init background image
@@ -1625,8 +1609,8 @@ static void init(void) {
 	layer_set_frame(text_layer_get_layer(text_date_layer), GRect(0, 44, 144, 30));
 	
 	text_time_layer = text_layer_create(bg_bounds);
-	text_layer_setup(window_layer, text_time_layer, GTextAlignmentCenter, textColor, FONT_KEY_ROBOTO_BOLD_SUBSET_49, "");
-	layer_set_frame(text_layer_get_layer(text_time_layer), GRect(0, -6, 144, 50));
+	text_layer_setup(window_layer, text_time_layer, GTextAlignmentCenter, textColor, FONT_KEY_ROBOTO_BOLD_SUBSET_49, ""); 
+	layer_set_frame(text_layer_get_layer(text_time_layer), GRect(0, -6, 144, 50)); 
 	
 	
 	//---------------------------------------------------------------------------
@@ -1642,7 +1626,7 @@ static void init(void) {
 	text_layer_setup(animated_layer[WEATHER_LAYER], text_weather_cond_layer, GTextAlignmentCenter, textColor, FONT_KEY_GOTHIC_18, updating_str);
 
 	text_weather_temp_layer = text_layer_create(GRect(92, -3, 47, 40));
-	text_layer_setup(animated_layer[WEATHER_LAYER], text_weather_temp_layer, GTextAlignmentCenter, textColor, FONT_KEY_GOTHIC_28, "-°");
+	text_layer_setup(animated_layer[WEATHER_LAYER], text_weather_temp_layer, GTextAlignmentCenter, textColor, FONT_KEY_GOTHIC_28, "-°"); //(PBL_IF_COLOR_ELSE(FONT_KEY_LECO_26_BOLD_NUMBERS_AM_PM, FONT_KEY_GOTHIC_28))
 	
 	//---------------------------------------------------------------------------
 	// Weather2 Layer (Wind & Humidity)
@@ -1669,7 +1653,7 @@ static void init(void) {
 	layer_add_child(window_layer, animated_layer[MOON_LAYER]);
 
 	moon_text_layer = text_layer_create(GRect(32, 0, 132, 28));
-	text_layer_setup(animated_layer[MOON_LAYER], moon_text_layer, GTextAlignmentLeft, textColor, FONT_KEY_GOTHIC_18, "-");
+	text_layer_setup(animated_layer[MOON_LAYER], moon_text_layer, GTextAlignmentLeft, textColor, FONT_KEY_GOTHIC_18_BOLD, "-"); //add bold
 	
 	moon_phase_layer = text_layer_create(GRect(32, 15, 132, 28));
 	text_layer_setup(animated_layer[MOON_LAYER], moon_phase_layer, GTextAlignmentLeft, textColor, FONT_KEY_GOTHIC_24_BOLD, "-");
@@ -1682,10 +1666,10 @@ static void init(void) {
 	layer_set_update_proc(animated_layer[CALENDAR_LAYER], cal_update_callback);
 
 	calendar_date_layer1 = text_layer_create(GRect(26, 0, 112, 21));
-	text_layer_setup(animated_layer[CALENDAR_LAYER], calendar_date_layer1, GTextAlignmentLeft, textColor, FONT_KEY_GOTHIC_18, default_cal_names[0]);
+	text_layer_setup(animated_layer[CALENDAR_LAYER], calendar_date_layer1, GTextAlignmentLeft, textColor, FONT_KEY_GOTHIC_18_BOLD, default_cal_names[0]); //add bold
 	
 	calendar_text_layer1 = text_layer_create(GRect(6, 15, 132, 28));
-	text_layer_setup(animated_layer[CALENDAR_LAYER], calendar_text_layer1, GTextAlignmentLeft, textColor, FONT_KEY_GOTHIC_24_BOLD, default_cal_names[1]);
+	text_layer_setup(animated_layer[CALENDAR_LAYER], calendar_text_layer1, GTextAlignmentLeft, textColor, FONT_KEY_GOTHIC_24_BOLD, default_cal_names[1]); //add bold
 	
 	//---------------------------------------------------------------------------
 	// Music Layer
@@ -1694,10 +1678,10 @@ static void init(void) {
 	layer_add_child(window_layer, animated_layer[MUSIC_LAYER]);
 
 	music_artist_layer = text_layer_create(GRect(6, 0, 132, 21));
-	text_layer_setup(animated_layer[MUSIC_LAYER], music_artist_layer, GTextAlignmentLeft, textColor, FONT_KEY_GOTHIC_18, "Artist");
+	text_layer_setup(animated_layer[MUSIC_LAYER], music_artist_layer, GTextAlignmentLeft, textColor, FONT_KEY_GOTHIC_18_BOLD, "Artist"); //add bold
 	
 	music_song_layer = text_layer_create(GRect(6, 15, 132, 28));
-	text_layer_setup(animated_layer[MUSIC_LAYER], music_song_layer, GTextAlignmentLeft, textColor, FONT_KEY_GOTHIC_24_BOLD, "Title");
+	text_layer_setup(animated_layer[MUSIC_LAYER], music_song_layer, GTextAlignmentLeft, textColor, FONT_KEY_GOTHIC_24, "Title"); //remove bold
 	
 	//---------------------------------------------------------------------------
 	// Status Layer (Phone Data)
@@ -1711,7 +1695,7 @@ static void init(void) {
 	text_sms_layer = text_layer_create(GRect(44, 23, 30, 48));
 	text_layer_setup(status_layer[STATUS_LAYER], text_sms_layer, GTextAlignmentCenter, textColor, FONT_KEY_GOTHIC_18_BOLD, "-");
 	
-	text_phone_layer = text_layer_create(GRect(78, 23, 23, 48));
+	text_phone_layer = text_layer_create(GRect(80, 23, 23, 48));
 	text_layer_setup(status_layer[STATUS_LAYER], text_phone_layer, GTextAlignmentCenter, textColor, FONT_KEY_GOTHIC_18_BOLD, "-");
 	
 	text_battery_layer = text_layer_create(GRect(105, 23, 30, 48));
@@ -1725,7 +1709,7 @@ static void init(void) {
 	layer_set_update_proc(status_layer[CALENDAR_STATUS_LAYER], cal_status_update_callback);
 
 	calendar_date_layer2 = text_layer_create(GRect(26, -1, 112, 21));
-	text_layer_setup(status_layer[CALENDAR_STATUS_LAYER], calendar_date_layer2, GTextAlignmentLeft, textColor, FONT_KEY_GOTHIC_18, default_cal_names[0]);
+	text_layer_setup(status_layer[CALENDAR_STATUS_LAYER], calendar_date_layer2, GTextAlignmentLeft, textColor, FONT_KEY_GOTHIC_18_BOLD, default_cal_names[0]); //add bold
 	
 	calendar_text_layer2 = text_layer_create(GRect(6, 13, 132, 28));
 	text_layer_setup(status_layer[CALENDAR_STATUS_LAYER], calendar_text_layer2, GTextAlignmentLeft, textColor, FONT_KEY_GOTHIC_24_BOLD, default_cal_names[1]);
@@ -1850,6 +1834,7 @@ static void deinit(void) {
 	text_layer_destroy(text_weather_day2_cond_layer);
 	text_layer_destroy(text_weather_day3_cond_layer);
 
+	
 	layer_destroy(battery_layer);
 	layer_destroy(pebble_battery_layer);
 	bitmap_layer_destroy(background_image);
@@ -1888,12 +1873,11 @@ static void deinit(void) {
 
 
 int main(void) {
-	//app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum() );
 	app_message_open(app_message_inbox_size_maximum(), 50);
 	app_message_register_inbox_received(rcv);
 
 	init();
-
+	
 	app_event_loop();
 	app_message_deregister_callbacks();
 
